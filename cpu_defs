@@ -1,0 +1,94 @@
+--
+--	Package File Template
+--
+--	Purpose: This package defines supplemental types, subtypes, 
+--		 constants, and functions 
+--
+--   To use any of the example code shown below, uncomment the lines and modify as necessary
+--
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.all;
+
+package cpu_defs is
+	type opcode is (load, store, add, sub, bne);
+	constant word_w: natural := 8; -- # of bits for bus
+	constant op_w: natural := 3; -- # of bits for opcode
+	constant rfill: std_ulogic_vector(op_w-1 downto 0):=(others => ‘0’); -- padding for address
+-- Declare constants
+--
+-- constant <constant_name>		: time := <time_unit> ns;
+-- constant <constant_name>		: integer := <value;
+--
+-- Declare functions and procedure
+-- two functions to do conversion between opcode bits of
+-- std_ulogic_vector and opcode type
+	function slv2op (slv: in std_ulogic_vector) return opcode;
+	function op2slv (op: in opcode) return std_ulogic_vector;
+
+end cpu_defs;
+
+package body cpu_defs is
+
+---- Example 1
+--  function <function_name>  (signal <signal_name> : in <type_declaration>  ) return <type_declaration> is
+--    variable <variable_name>     : <type_declaration>;
+--  begin
+--    <variable_name> := <signal_name> xor <signal_name>;
+--    return <variable_name>; 
+--  end <function_name>;
+	type optable is array(opcode) of
+	std_ulogic_vector(op_w - 1 downto 0);
+	constant trans_table: optable := ("000", "001", "010", "011", "100");
+	function op2slv (op: in opcode) return std_ulogic_vector is
+	begin
+		return trans_table(op);
+	end function op2slv;
+
+---- Example 2
+--  function <function_name>  (signal <signal_name> : in <type_declaration>;
+--                         signal <signal_name>   : in <type_declaration>  ) return <type_declaration> is
+--  begin
+--    if (<signal_name> = '1') then
+--      return <signal_name>;
+--    else
+--      return 'Z';
+--    end if;
+--  end <function_name>;
+	function slv2op (slv: in std_ulogic_vector) return
+		opcode is
+		variable transop: opcode;
+	begin
+-- this is how it should be done, but some synthesis
+-- tools may not support it.
+		for i in opcode loop
+			if slv = trans_table(i) then
+				transop := i;
+			end if ;
+		end loop;
+	end function slv2op;
+
+---- Procedure Example
+--  procedure <procedure_name>  (<type_declaration> <constant_name>  : in <type_declaration>) is
+--    
+--  begin
+--    
+--  end <procedure_name>;
+	function slv2op (slv: in std_ulogic_vector) return opcode is
+		variable transop: opcode;
+	begin
+-- this is a less elegant method;
+-- if the definitions of the opcode and/or trans_table are
+-- changed, then this code also has to be changed.
+-- There is therefore potential for inconsistency.
+		case slv is
+			when "000" => transop := load;
+			when "001" => transop := store;
+			when "010" => transop := add;
+			when "011" => transop := sub;
+			when "100" => transop := bne
+		end case
+		return transop;
+	end function slv2op;
+ 
+end cpu_defs;
